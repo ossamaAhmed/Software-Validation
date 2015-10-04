@@ -1,181 +1,161 @@
 package ca.mcgill.ecse429.conformancetest.legislation;
 
-public class Legislation
-{
+public class Legislation {
 
-  //------------------------
-  // MEMBER VARIABLES
-  //------------------------
+	// ------------------------
+	// MEMBER VARIABLES
+	// ------------------------
 
-  //Legislation Attributes
-  private boolean isCommonsBill;
+	// Legislation Attributes
+	private boolean isCommonsBill;
 
-  //Legislation State Machines
-  enum State { inPreparation, inHouseOfCommons, inSenate, finalized }
-  private State state;
+	// Legislation State Machines
+	enum State {
+		inPreparation, inHouseOfCommons, inSenate, finalized
+	}
 
-  //------------------------
-  // CONSTRUCTOR
-  //------------------------
+	private State state;
 
-  public Legislation()
-  {
-    isCommonsBill = true;
-    setState(State.inPreparation);
-  }
+	// ------------------------
+	// CONSTRUCTOR
+	// ------------------------
 
-  //------------------------
-  // INTERFACE
-  //------------------------
+	public Legislation() {
+		isCommonsBill = true;
+		setState(State.inPreparation);
+	}
 
-  public boolean setIsCommonsBill(boolean aIsCommonsBill)
-  {
-    boolean wasSet = false;
-    isCommonsBill = aIsCommonsBill;
-    wasSet = true;
-    return wasSet;
-  }
+	// ------------------------
+	// INTERFACE
+	// ------------------------
 
-  public boolean getIsCommonsBill()
-  {
-    return isCommonsBill;
-  }
+	public boolean setIsCommonsBill(boolean aIsCommonsBill) {
+		boolean wasSet = false;
+		isCommonsBill = aIsCommonsBill;
+		wasSet = true;
+		return wasSet;
+	}
 
-  public boolean isIsCommonsBill()
-  {
-    return isCommonsBill;
-  }
-  
-  // state reporter methods
+	public boolean getIsCommonsBill() {
+		return isCommonsBill;
+	}
 
-  public String getStateFullName()
-  {
-    String answer = state.toString();
-    return answer;
-  }
+	public boolean isIsCommonsBill() {
+		return isCommonsBill;
+	}
 
-  public State getState()
-  {
-    return state;
-  }
-  
-  // events
+	// state reporter methods
 
-  public boolean introduceInHouse()
-  {
-    boolean wasEventProcessed = false;
-    
-    State aState = state;
-    switch (aState)
-    {
-      case inPreparation:
-        setState(State.inHouseOfCommons);
-        wasEventProcessed = true;
-        break;
-      default:
-        // Other states do respond to this event
-    }
+	public String getStateFullName() {
+		String answer = state.toString();
+		return answer;
+	}
 
-    return wasEventProcessed;
-  }
+	public State getState() {
+		return state;
+	}
 
-  public boolean introduceInSenate()
-  {
-    boolean wasEventProcessed = false;
-    
-    State aState = state;
-    switch (aState)
-    {
-      case inPreparation:
-        isCommonsBill = false;
-        setState(State.inSenate);
-        wasEventProcessed = true;
-        break;
-      default:
-        // Other states do respond to this event
-    }
+	// events
 
-    return wasEventProcessed;
-  }
+	public boolean introduceInHouse() {
+		boolean wasEventProcessed = false;
 
-  public boolean voteFails()
-  {
-    boolean wasEventProcessed = false;
-    
-    State aState = state;
-    switch (aState)
-    {
-      case inHouseOfCommons:
-        setState(State.inPreparation);
-        wasEventProcessed = true;
-        break;
-      case inSenate:
-        setState(State.inPreparation);
-        wasEventProcessed = true;
-        break;
-      default:
-        // Other states do respond to this event
-    }
+		State aState = state;
+		switch (aState) {
+		case inPreparation:
+			setState(State.inHouseOfCommons);
+			wasEventProcessed = true;
+			break;
+		default:
+			// Other states do respond to this event
+		}
 
-    return wasEventProcessed;
-  }
+		return wasEventProcessed;
+	}
 
-  public boolean votePasses()
-  {
-    boolean wasEventProcessed = false;
-    
-    State aState = state;
-    switch (aState)
-    {
-      case inHouseOfCommons:
-        if (getIsCommonsBill())
-        {
-          setState(State.inSenate);
-          wasEventProcessed = true;
-          break;
-        }
-        if (!getIsCommonsBill())
-        {
-          setState(State.finalized);
-          wasEventProcessed = true;
-          break;
-        }
-        break;
-      case inSenate:
-        if (!getIsCommonsBill())
-        {
-          setState(State.inHouseOfCommons);
-          wasEventProcessed = true;
-          break;
-        }
-        if (getIsCommonsBill())
-        {
-          setState(State.finalized);
-          wasEventProcessed = true;
-          break;
-        }
-        break;
-      default:
-        // Other states do respond to this event
-    }
+	public boolean introduceInSenate() {
+		boolean wasEventProcessed = false;
 
-    return wasEventProcessed;
-  }
+		State aState = state;
+		switch (aState) {
+		case inPreparation:
+			isCommonsBill = false;
+			setState(State.inSenate);
+			wasEventProcessed = true;
+			break;
+		default:
+			// Other states do respond to this event
+		}
 
-  private void setState(State aState)
-  {
-    state = aState;
-  }
+		return wasEventProcessed;
+	}
 
-  public void delete()
-  {}
+	public boolean voteFails() {
+		boolean wasEventProcessed = false;
 
+		State aState = state;
+		switch (aState) {
+		case inHouseOfCommons:
+			setState(State.inPreparation);
+			wasEventProcessed = true;
+			break;
+		case inSenate:
+			setState(State.inPreparation);
+			wasEventProcessed = true;
+			break;
+		default:
+			// Other states do respond to this event
+		}
 
-  public String toString()
-  {
-	  String outputString = "";
-    return super.toString() + "["+
-            "isCommonsBill" + ":" + getIsCommonsBill()+ "]"
-     + outputString;
-  }
+		return wasEventProcessed;
+	}
+
+	public boolean votePasses() {
+		boolean wasEventProcessed = false;
+
+		State aState = state;
+		switch (aState) {
+		case inHouseOfCommons:
+			if (getIsCommonsBill()) {
+				setState(State.inSenate);
+				wasEventProcessed = true;
+				break;
+			}
+			if (!getIsCommonsBill()) {
+				setState(State.finalized);
+				wasEventProcessed = true;
+				break;
+			}
+			break;
+		case inSenate:
+			if (!getIsCommonsBill()) {
+				setState(State.inHouseOfCommons);
+				wasEventProcessed = true;
+				break;
+			}
+			if (getIsCommonsBill()) {
+				setState(State.finalized);
+				wasEventProcessed = true;
+				break;
+			}
+			break;
+		default:
+			// Other states do respond to this event
+		}
+
+		return wasEventProcessed;
+	}
+
+	private void setState(State aState) {
+		state = aState;
+	}
+
+	public void delete() {
+	}
+
+	public String toString() {
+		String outputString = "";
+		return super.toString() + "[" + "isCommonsBill" + ":"
+				+ getIsCommonsBill() + "]" + outputString;
+	}
 }

@@ -1,50 +1,43 @@
 package ca.mcgill.ecse429.conformancetest.statemodel;
 
-public class State
-{
+public class State {
 
-  //------------------------
-  // MEMBER VARIABLES
-  //------------------------
+	// ------------------------
+	// MEMBER VARIABLES
+	// ------------------------
 
-  //State Attributes
-  private String name;
+	// State Attributes
+	private String name;
 
-  //------------------------
-  // CONSTRUCTOR
-  //------------------------
+	// ------------------------
+	// CONSTRUCTOR
+	// ------------------------
 
-  public State(String aName)
-  {
-    name = aName;
-  }
+	public State(String aName) {
+		name = aName;
+	}
 
-  //------------------------
-  // INTERFACE
-  //------------------------
+	// ------------------------
+	// INTERFACE
+	// ------------------------
 
-  public boolean setName(String aName)
-  {
-    boolean wasSet = false;
-    name = aName;
-    wasSet = true;
-    return wasSet;
-  }
+	public boolean setName(String aName) {
+		boolean wasSet = false;
+		name = aName;
+		wasSet = true;
+		return wasSet;
+	}
 
-  public String getName()
-  {
-    return name;
-  }
+	public String getName() {
+		return name;
+	}
 
-  public void delete()
-  {}
+	public void delete() {
+	}
 
-
-  public String toString()
-  {
-	  String outputString = "";
-    return super.toString() + "["+
-            "name" + ":" + getName()+ "]"
-     + outputString;
-  }
+	public String toString() {
+		String outputString = "";
+		return super.toString() + "[" + "name" + ":" + getName() + "]"
+				+ outputString;
+	}
 }

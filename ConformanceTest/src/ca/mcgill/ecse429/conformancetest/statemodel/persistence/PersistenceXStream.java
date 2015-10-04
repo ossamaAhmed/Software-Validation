@@ -29,7 +29,8 @@ public class PersistenceXStream {
 	public static Object loadFromXMLwithXStream() {
 		xstream.setMode(XStream.ID_REFERENCES);
 		try {
-			FileReader fileReader = new FileReader(filename); // load our xml file  
+			FileReader fileReader = new FileReader(filename); // load our xml
+																// file
 			return xstream.fromXML(fileReader);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -40,9 +41,9 @@ public class PersistenceXStream {
 	public static void setAlias(String xmlTagName, Class<?> className) {
 		xstream.alias(xmlTagName, className);
 	}
-	
+
 	public static void setFilename(String fn) {
-		filename = fn; 
+		filename = fn;
 	}
 
 }

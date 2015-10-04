@@ -18,10 +18,13 @@ public class PersistenceStateMachine {
 	public static void loadStateMachine(String filename) {
 		StateMachine sm = StateMachine.getInstance();
 		PersistenceStateMachine.initializeXStream(filename);
-		StateMachine sm2 = (StateMachine) PersistenceXStream.loadFromXMLwithXStream();
+		StateMachine sm2 = (StateMachine) PersistenceXStream
+				.loadFromXMLwithXStream();
 		if (sm2 != null) {
-			// unfortunately, this creates a second StateMachine object, even though it is a singleton
-			// copy loaded model into singleton instance of StateMachine, because this will be used throughout the application
+			// unfortunately, this creates a second StateMachine object, even
+			// though it is a singleton
+			// copy loaded model into singleton instance of StateMachine,
+			// because this will be used throughout the application
 			sm.setClassName(sm2.getClassName());
 			sm.setPackageName(sm2.getPackageName());
 			sm.setStartState(sm2.getStartState());
@@ -33,7 +36,7 @@ public class PersistenceStateMachine {
 				sm.addTransition(tIt.next());
 		}
 	}
-	
+
 	public static void saveStateMachine(String filename) {
 		StateMachine sm = StateMachine.getInstance();
 		PersistenceStateMachine.initializeXStream(filename);
