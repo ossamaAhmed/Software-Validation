@@ -80,6 +80,11 @@ public class CCoinBox {
 	public State getState() {
 		return state;
 	}
+	
+	// ## Added ## //
+	public String getStateName() {
+		return state.name();
+	}
 
 	// events
 

@@ -38,7 +38,7 @@ import ca.mcgill.ecse429.conformancetest.statemodel.Transition;
 public final class TestGenerator {
 	// Data
 	private final StateMachine mStateMachine;
-	private final List<List<Transition>> mPaths;
+	private final List<ArrayList<Transition>> mPaths;
 	
 	private final String mTargetClassName;
 
@@ -53,7 +53,7 @@ public final class TestGenerator {
 	private int mTestCount;
 	
 	// Constructor
-	public TestGenerator(StateMachine stateMachine, List<List<Transition>> paths) {
+	public TestGenerator(StateMachine stateMachine, List<ArrayList<Transition>> paths) {
 		if (stateMachine == null) {
 			throw new IllegalArgumentException("stateMachine");
 		}
@@ -89,7 +89,7 @@ public final class TestGenerator {
 
 	// Private Methods
 	private void generateTestContainerClass() throws JClassAlreadyExistsException {
-		String testClassName = String.format("%sTests", mTargetClassName);
+		String testClassName = String.format("ca.mcgill.ecse429.conformancetest.statemodel.GeneratedTest%s", mTargetClass.name());
 		mTestClass = mModel._class(testClassName);
 	}
 	
@@ -177,7 +177,7 @@ public final class TestGenerator {
 		JInvocation assertInvocation = state.getTestMethodBody().staticInvoke(mAssertClass, "assertEquals");
 		
 		assertInvocation.arg(newState);
-		assertInvocation.arg(state.getTargetInstance().invoke("getState"));
+		assertInvocation.arg(state.getTargetInstance().invoke("getStateName"));
 	}
 	
 	private void preProcessActions(TestGenerationState state, ActionVerificationCollection verifications) {
