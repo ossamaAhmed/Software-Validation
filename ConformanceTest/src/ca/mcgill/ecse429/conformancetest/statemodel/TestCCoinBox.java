@@ -171,6 +171,15 @@ public class TestCCoinBox {
         Assert.assertEquals("allowed", target.getStateName());
         Assert.assertEquals(true, target.getAllowVend());
         Assert.assertEquals((v1 + 1), target.getCurQtrs());
+        
+        // (1) ADDED //
+        int v3 = target.getCurQtrs();
+        target.addQtr();
+        Assert.assertEquals("allowed", target.getStateName());
+        Assert.assertEquals(true, target.getAllowVend());
+        Assert.assertEquals((v3 + 1), target.getCurQtrs());
+        // END ADDED //
+        
         int v2 = target.getTotalQtrs();
         target.vend();
         Assert.assertEquals("notAllowed", target.getStateName());
@@ -195,6 +204,21 @@ public class TestCCoinBox {
         Assert.assertEquals("allowed", target.getStateName());
         Assert.assertEquals(true, target.getAllowVend());
         Assert.assertEquals((v1 + 1), target.getCurQtrs());
+        
+        // (2) ADDED //
+        int v4 = target.getCurQtrs();
+        target.addQtr();
+        Assert.assertEquals("allowed", target.getStateName());
+        Assert.assertEquals(true, target.getAllowVend());
+        Assert.assertEquals((v4 + 1), target.getCurQtrs());
+        
+        int v5 = target.getCurQtrs();
+        target.addQtr();
+        Assert.assertEquals("allowed", target.getStateName());
+        Assert.assertEquals(true, target.getAllowVend());
+        Assert.assertEquals((v5 + 1), target.getCurQtrs());
+        // END ADDED //
+        
         int v2 = target.getTotalQtrs();
         int v3 = target.getCurQtrs();
         target.vend();
