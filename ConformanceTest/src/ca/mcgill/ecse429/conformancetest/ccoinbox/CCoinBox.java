@@ -104,6 +104,9 @@ public class CCoinBox {
 			break;
 		case allowed:
 			curQtrs = 0;
+			// ADDED //
+			allowVend = false;
+			// END ADDED //
 			setState(State.empty);
 			wasEventProcessed = true;
 			break;
@@ -132,7 +135,7 @@ public class CCoinBox {
 			break;
 		case allowed:
 			curQtrs = curQtrs + 1;
-			setState(State.notAllowed);
+			// CHANGE (line removal)
 			wasEventProcessed = true;
 			break;
 		default:
@@ -161,6 +164,9 @@ public class CCoinBox {
 		case allowed:
 			totalQtrs = 0;
 			curQtrs = 0;
+			// ADDED //
+			allowVend = false;
+			// END ADDED //
 			setState(State.empty);
 			wasEventProcessed = true;
 			break;
