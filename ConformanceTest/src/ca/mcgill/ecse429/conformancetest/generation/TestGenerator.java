@@ -16,6 +16,7 @@ import org.eclipse.jdt.core.dom.BooleanLiteral;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.InfixExpression.Operator;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NumberLiteral;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.junit.Test;
@@ -37,10 +38,9 @@ import ca.mcgill.ecse429.conformancetest.statemodel.Transition;
 
 public final class TestGenerator {
 	// Data
+	private final String mTestPackage;
 	private final StateMachine mStateMachine;
 	private final List<ArrayList<Transition>> mPaths;
-	
-	private final String mTargetClassName;
 
 	// Code Modeling
 	private final JCodeModel mModel;
@@ -53,26 +53,30 @@ public final class TestGenerator {
 	private int mTestCount;
 	
 	// Constructor
-	public TestGenerator(StateMachine stateMachine, List<ArrayList<Transition>> paths) {
+	public TestGenerator(StateMachine stateMachine, List<ArrayList<Transition>> paths, String testPackage) {
 		if (stateMachine == null) {
 			throw new IllegalArgumentException("stateMachine");
 		}
 		if (paths == null) {
 			throw new IllegalArgumentException("paths");
 		}
+		if(testPackage == null) {
+			throw new IllegalArgumentException("testPackage");
+		}
 
+		mTestPackage = testPackage;
 		mStateMachine = stateMachine;
 		mPaths = paths;
 		
 		mTestCount = 0;
 		 
-		mTargetClassName = String.format(
+		String targetClassName = String.format(
 				"%s.%s",
 				mStateMachine.getPackageName(),
 				mStateMachine.getClassName().replace(".java", ""));
 
 		mModel = new JCodeModel();
-		mTargetClass = mModel.ref(mTargetClassName);
+		mTargetClass = mModel.ref(targetClassName);
 		mAssertClass = mModel.ref(org.junit.Assert.class);
 	}
 
@@ -89,7 +93,7 @@ public final class TestGenerator {
 
 	// Private Methods
 	private void generateTestContainerClass() throws JClassAlreadyExistsException {
-		String testClassName = String.format("ca.mcgill.ecse429.conformancetest.statemodel.GeneratedTest%s", mTargetClass.name());
+		String testClassName = String.format("%s.GeneratedTest%s", mTestPackage, mTargetClass.name());
 		mTestClass = mModel._class(testClassName);
 	}
 	
@@ -114,10 +118,12 @@ public final class TestGenerator {
 	}
 	
 	private void processTransition(TestGenerationState state, Transition transition) {
-		ActionVerificationCollection verifications = computeActions(state, transition.getAction());
+		ActionVerificationCollection verifications = computeActions(transition.getAction());
+		ConditionVerificationCollection conditions = computeConditions(transition.getCondition());
+		
+		processConditions(state, conditions);
 		
 		preProcessActions(state, verifications);
-		
 		processEvent(state, transition.getEvent());
 		assertNewState(state, transition.getTo().getName());
 		
@@ -125,13 +131,9 @@ public final class TestGenerator {
 	}
 	
 	// Private Model Builder Methods
-	private ActionVerificationCollection computeActions(TestGenerationState state, String actions) {
+	private ActionVerificationCollection computeActions(String actions) {
 		// Create an AST parser for the actions in the transition.
-		ASTParser parser = ASTParser.newParser(AST.JLS8);
-		parser.setSource(actions.toCharArray());
-		parser.setKind(ASTParser.K_STATEMENTS);
-		parser.setBindingsRecovery(false);
-		parser.setResolveBindings(false);
+		ASTParser parser = getParserForSnippet(actions);
 		
 		// Visit each node in the AST and match all assignments.
 		ActionVerificationCollection verificationInfo = new ActionVerificationCollection();
@@ -161,6 +163,26 @@ public final class TestGenerator {
 		return verificationInfo;
 	}
 	
+	private ConditionVerificationCollection computeConditions(String condition) {
+		// NOTE: This method assumes a single method call, nothing else is supported!!!
+		
+		// Create an AST parser for the conditions in the transition.
+		ASTParser parser = getParserForSnippet(condition);
+		
+		// Visit each node in the AST and match all method calls.
+		ConditionVerificationCollection conditionInfo = new ConditionVerificationCollection();
+		parser.createAST(null).accept(new ASTVisitor() {
+			public boolean visit(MethodInvocation invocation) {
+				conditionInfo.getBooleanConditions().add(createBooleanCondition(invocation, condition.startsWith("!")));
+				
+				return false;
+			}
+		});
+		
+		return conditionInfo;
+	}
+	
+	
 	private void processEvent(TestGenerationState state, String event) {
 		if(event.equals("@ctor")) {
 			JVar targetInstance = state.getTestMethodBody().decl(mTargetClass, "target");
@@ -173,11 +195,17 @@ public final class TestGenerator {
 		}
 	}
 	
+	
 	private void assertNewState(TestGenerationState state, String newState) {
 		JInvocation assertInvocation = state.getTestMethodBody().staticInvoke(mAssertClass, "assertEquals");
 		
 		assertInvocation.arg(newState);
 		assertInvocation.arg(state.getTargetInstance().invoke("getStateName"));
+	}
+	private void processConditions(TestGenerationState state, ConditionVerificationCollection conditions) {
+		for(BooleanCondition condition : conditions.getBooleanConditions()) {
+			processBooleanCondition(state, condition);
+		}
 	}
 	
 	private void preProcessActions(TestGenerationState state, ActionVerificationCollection verifications) {
@@ -198,6 +226,12 @@ public final class TestGenerator {
 		for(HistoricalNumericalAssertion assertion : verifications.getHistoricalNumericalAssertions()) {
 			postProcessHistoricalNumericalAssertion(state, assertion);
 		}
+	}
+	private void processBooleanCondition(TestGenerationState state, BooleanCondition condition) {
+		JInvocation invocation = state.getTargetInstance().invoke(condition.getIdentifier());
+		invocation.arg(JExpr.lit(condition.getRequiredValue()));
+		
+		state.getTestMethodBody().add(invocation);
 	}
 	
 	private void processNumericalAssertion(TestGenerationState state, NumericalAssertion assertion) {
@@ -250,6 +284,13 @@ public final class TestGenerator {
 		assertInvocation.arg(state.getTargetInstance().invoke(getterMethodName));
 	}
 	
+	private BooleanCondition createBooleanCondition(MethodInvocation invocation, boolean invert) {
+		String identifier = getSetterForGetter(invocation.getName().getIdentifier());
+		boolean requiredValue = !invert;
+		
+		return new BooleanCondition(identifier, requiredValue);
+	}
+	
 	// Private AST Methods
 	private ActionVerificationType determineVerificationType(Assignment node) {
 		// Match the shape of the assignment to either:
@@ -266,6 +307,7 @@ public final class TestGenerator {
 			return ActionVerificationType.UNKNOWN;
 		}
 	}
+	
 	
 	private NumericalAssertion createNumericalAssertion(Assignment node) {
 		SimpleName leftSide = (SimpleName) node.getLeftHandSide();
@@ -301,6 +343,7 @@ public final class TestGenerator {
 		
 		return new HistoricalNumericalAssertion(preIdentifier, postIdentifier, constant, infixOp);
 	}
+	
 	
 	private boolean isAssignmentNodeNumericalAssertion(Assignment node) {
 		Expression leftSide = node.getLeftHandSide();
@@ -379,6 +422,48 @@ public final class TestGenerator {
 		}
 	}
 	
+	// Private Condition Verification Types
+	private final class ConditionVerificationCollection {
+		// Data
+		private final List<BooleanCondition> mBooleanConditions;
+		
+		// Constructor
+		public ConditionVerificationCollection() {
+			mBooleanConditions = new ArrayList<BooleanCondition>();
+		}
+		
+		// Public Properties
+		public List<BooleanCondition> getBooleanConditions() {
+			return mBooleanConditions;
+		}
+	}
+	
+	public abstract class Condition<T> {
+		// Data
+		private final String mIdentifier;
+		private final T mRequiredValue;
+		
+		// Constructor
+		public Condition(String identifier, T requiredValue) {
+			mIdentifier = identifier;
+			mRequiredValue = requiredValue;
+		}
+		
+		// Public Properties
+		public T getRequiredValue() {
+			return mRequiredValue;
+		}
+		public String getIdentifier() {
+			return mIdentifier;
+		}
+	}
+	
+	public final class BooleanCondition extends Condition<Boolean> {
+		public BooleanCondition(String identifier, Boolean requiredValue) {
+			super(identifier, requiredValue);
+		}
+	}
+	
 	// Private Action Verification Types
 	private enum ActionVerificationType {
 		UNKNOWN,
@@ -389,7 +474,7 @@ public final class TestGenerator {
 		HISTORICAL_NUMERICAL_ASSERTION
 	}
 
-	private class ActionVerificationCollection {
+	private final class ActionVerificationCollection {
 		// Data
 		private final List<NumericalAssertion> mNumericalAssertions;
 		private final List<BooleanAssertion> mBooleanAssertions;
@@ -417,8 +502,8 @@ public final class TestGenerator {
 	
 	private abstract class Assertion<T> {
 		// Data
-		private String mIdentifier;
-		private T mValue;
+		private final String mIdentifier;
+		private final T mValue;
 		
 		// Constructor
 		protected Assertion(String identifier, T value) {
@@ -440,14 +525,14 @@ public final class TestGenerator {
 		}
 	}
 	
-	private class NumericalAssertion extends Assertion<Integer> {
+	private final class NumericalAssertion extends Assertion<Integer> {
 		// Constructor
 		protected NumericalAssertion(String identifier, Integer value) {
 			super(identifier, value);
 		}
 	}
 	
-	private class BooleanAssertion extends Assertion<Boolean> {
+	private final class BooleanAssertion extends Assertion<Boolean> {
 		// Constructor
 		protected BooleanAssertion(String identifier, Boolean value) {
 			super(identifier, value);
@@ -505,5 +590,25 @@ public final class TestGenerator {
 				"get%c%s",
 				Character.toUpperCase(fieldName.charAt(0)),
 				fieldName.substring(1));
+	}
+	
+	private String getSetterForGetter(String getter) {
+		return getter.replace("get", "set");
+	}
+	
+	private ASTParser getParserForSnippet(String snippet) {
+		if(!snippet.endsWith(";")) {
+			snippet = snippet + ";";
+		}
+		
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		
+		parser.setSource(snippet.toCharArray());
+		parser.setKind(ASTParser.K_STATEMENTS);
+		parser.setBindingsRecovery(false);
+		parser.setResolveBindings(false);
+		parser.setStatementsRecovery(true);
+		
+		return parser;
 	}
 }

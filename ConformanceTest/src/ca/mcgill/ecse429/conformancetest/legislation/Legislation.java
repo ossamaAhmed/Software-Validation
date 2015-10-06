@@ -54,6 +54,12 @@ public class Legislation {
 	public State getState() {
 		return state;
 	}
+	
+	// ADDED //
+	public String getStateName() {
+		return state.name();
+	}
+	// END ADDED //
 
 	// events
 
