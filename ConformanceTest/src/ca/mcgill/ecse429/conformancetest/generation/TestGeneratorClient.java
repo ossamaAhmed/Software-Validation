@@ -23,6 +23,6 @@ public final class TestGeneratorClient {
 		List<ArrayList<Transition>> paths = tree.getPaths(machine);
 		TestGenerator generator = new TestGenerator(machine, paths);
 
-		generator.generateTests(new File("/Users/Hernan/Desktop"));
+		generator.generateTests(new File("src"));
 	}
 }
